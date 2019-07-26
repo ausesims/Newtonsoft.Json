@@ -53,7 +53,7 @@ namespace Newtonsoft.Json
         /// property returns <c>true</c> if the next token was read successfully; <c>false</c> if there are no more tokens to read.</returns>
         /// <remarks>Derived classes must override this method to get asynchronous behaviour. Otherwise it will
         /// execute synchronously, returning an already-completed task.</remarks>
-        public override Task<bool> ReadAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public override Task<bool> ReadAsync(CancellationToken cancellationToken = default)
         {
             return _safeAsync ? DoReadAsync(cancellationToken) : base.ReadAsync(cancellationToken);
         }
@@ -78,7 +78,7 @@ namespace Newtonsoft.Json
                         return ParseObjectAsync(cancellationToken);
                     case State.PostValue:
                         Task<bool> task = ParsePostValueAsync(false, cancellationToken);
-                        if (task.Status == TaskStatus.RanToCompletion)
+                        if (task.IsCompletedSucessfully())
                         {
                             if (task.Result)
                             {
@@ -176,6 +176,13 @@ namespace Newtonsoft.Json
                         }
                         else
                         {
+                            // handle multiple content without comma delimiter
+                            if (SupportMultipleContent && Depth == 0)
+                            {
+                                SetStateBasedOnCurrent();
+                                return false;
+                            }
+
                             throw JsonReaderException.Create(this, "After parsing a value an unexpected character was encountered: {0}.".FormatWith(CultureInfo.InvariantCulture, currentChar));
                         }
 
@@ -355,7 +362,7 @@ namespace Newtonsoft.Json
 
                         if (char.IsNumber(currentChar) || currentChar == '-' || currentChar == '.')
                         {
-                            ParseNumber(ReadType.Read);
+                            await ParseNumberAsync(ReadType.Read, cancellationToken).ConfigureAwait(false);
                             return true;
                         }
 
@@ -524,7 +531,7 @@ namespace Newtonsoft.Json
             _charPos++;
 
             Task<bool> task = EnsureCharsAsync(1, append, cancellationToken);
-            if (task.Status == TaskStatus.RanToCompletion)
+            if (task.IsCompletedSucessfully())
             {
                 SetNewLine(task.Result);
                 return AsyncUtils.CompletedTask;
@@ -972,9 +979,9 @@ namespace Newtonsoft.Json
 
             string propertyName;
 
-            if (NameTable != null)
+            if (PropertyNameTable != null)
             {
-                propertyName = NameTable.Get(_stringReference.Chars, _stringReference.StartIndex, _stringReference.Length)
+                propertyName = PropertyNameTable.Get(_stringReference.Chars, _stringReference.StartIndex, _stringReference.Length)
                     // no match in name table
                     ?? _stringReference.ToString();
             }
@@ -1131,7 +1138,7 @@ namespace Newtonsoft.Json
             switch (_currentState)
             {
                 case State.PostValue:
-                    if (await ParsePostValueAsync(true, cancellationToken))
+                    if (await ParsePostValueAsync(true, cancellationToken).ConfigureAwait(false))
                     {
                         return null;
                     }
@@ -1266,7 +1273,7 @@ namespace Newtonsoft.Json
             switch (_currentState)
             {
                 case State.PostValue:
-                    if (await ParsePostValueAsync(true, cancellationToken))
+                    if (await ParsePostValueAsync(true, cancellationToken).ConfigureAwait(false))
                     {
                         return null;
                     }
@@ -1380,7 +1387,7 @@ namespace Newtonsoft.Json
         /// property returns the <see cref="Nullable{T}"/> of <see cref="bool"/>. This result will be <c>null</c> at the end of an array.</returns>
         /// <remarks>Derived classes must override this method to get asynchronous behaviour. Otherwise it will
         /// execute synchronously, returning an already-completed task.</remarks>
-        public override Task<bool?> ReadAsBooleanAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public override Task<bool?> ReadAsBooleanAsync(CancellationToken cancellationToken = default)
         {
             return _safeAsync ? DoReadAsBooleanAsync(cancellationToken) : base.ReadAsBooleanAsync(cancellationToken);
         }
@@ -1392,7 +1399,7 @@ namespace Newtonsoft.Json
             switch (_currentState)
             {
                 case State.PostValue:
-                    if (await ParsePostValueAsync(true, cancellationToken))
+                    if (await ParsePostValueAsync(true, cancellationToken).ConfigureAwait(false))
                     {
                         return null;
                     }
@@ -1439,9 +1446,9 @@ namespace Newtonsoft.Json
                                 await ParseNumberAsync(ReadType.Read, cancellationToken).ConfigureAwait(false);
                                 bool b;
 #if HAVE_BIG_INTEGER
-                                if (Value is BigInteger)
+                                if (Value is BigInteger i)
                                 {
-                                    b = (BigInteger)Value != 0;
+                                    b = i != 0;
                                 }
                                 else
 #endif
@@ -1515,7 +1522,7 @@ namespace Newtonsoft.Json
         /// property returns the <see cref="byte"/>[]. This result will be <c>null</c> at the end of an array.</returns>
         /// <remarks>Derived classes must override this method to get asynchronous behaviour. Otherwise it will
         /// execute synchronously, returning an already-completed task.</remarks>
-        public override Task<byte[]> ReadAsBytesAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public override Task<byte[]> ReadAsBytesAsync(CancellationToken cancellationToken = default)
         {
             return _safeAsync ? DoReadAsBytesAsync(cancellationToken) : base.ReadAsBytesAsync(cancellationToken);
         }
@@ -1528,7 +1535,7 @@ namespace Newtonsoft.Json
             switch (_currentState)
             {
                 case State.PostValue:
-                    if (await ParsePostValueAsync(true, cancellationToken))
+                    if (await ParsePostValueAsync(true, cancellationToken).ConfigureAwait(false))
                     {
                         return null;
                     }
@@ -1656,7 +1663,7 @@ namespace Newtonsoft.Json
         /// property returns the <see cref="Nullable{T}"/> of <see cref="DateTime"/>. This result will be <c>null</c> at the end of an array.</returns>
         /// <remarks>Derived classes must override this method to get asynchronous behaviour. Otherwise it will
         /// execute synchronously, returning an already-completed task.</remarks>
-        public override Task<DateTime?> ReadAsDateTimeAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public override Task<DateTime?> ReadAsDateTimeAsync(CancellationToken cancellationToken = default)
         {
             return _safeAsync ? DoReadAsDateTimeAsync(cancellationToken) : base.ReadAsDateTimeAsync(cancellationToken);
         }
@@ -1674,7 +1681,7 @@ namespace Newtonsoft.Json
         /// property returns the <see cref="Nullable{T}"/> of <see cref="DateTimeOffset"/>. This result will be <c>null</c> at the end of an array.</returns>
         /// <remarks>Derived classes must override this method to get asynchronous behaviour. Otherwise it will
         /// execute synchronously, returning an already-completed task.</remarks>
-        public override Task<DateTimeOffset?> ReadAsDateTimeOffsetAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public override Task<DateTimeOffset?> ReadAsDateTimeOffsetAsync(CancellationToken cancellationToken = default)
         {
             return _safeAsync ? DoReadAsDateTimeOffsetAsync(cancellationToken) : base.ReadAsDateTimeOffsetAsync(cancellationToken);
         }
@@ -1692,7 +1699,7 @@ namespace Newtonsoft.Json
         /// property returns the <see cref="Nullable{T}"/> of <see cref="decimal"/>. This result will be <c>null</c> at the end of an array.</returns>
         /// <remarks>Derived classes must override this method to get asynchronous behaviour. Otherwise it will
         /// execute synchronously, returning an already-completed task.</remarks>
-        public override Task<decimal?> ReadAsDecimalAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public override Task<decimal?> ReadAsDecimalAsync(CancellationToken cancellationToken = default)
         {
             return _safeAsync ? DoReadAsDecimalAsync(cancellationToken) : base.ReadAsDecimalAsync(cancellationToken);
         }
@@ -1710,7 +1717,7 @@ namespace Newtonsoft.Json
         /// property returns the <see cref="Nullable{T}"/> of <see cref="double"/>. This result will be <c>null</c> at the end of an array.</returns>
         /// <remarks>Derived classes must override this method to get asynchronous behaviour. Otherwise it will
         /// execute synchronously, returning an already-completed task.</remarks>
-        public override Task<double?> ReadAsDoubleAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public override Task<double?> ReadAsDoubleAsync(CancellationToken cancellationToken = default)
         {
             return _safeAsync ? DoReadAsDoubleAsync(cancellationToken) : base.ReadAsDoubleAsync(cancellationToken);
         }
@@ -1728,7 +1735,7 @@ namespace Newtonsoft.Json
         /// property returns the <see cref="Nullable{T}"/> of <see cref="int"/>. This result will be <c>null</c> at the end of an array.</returns>
         /// <remarks>Derived classes must override this method to get asynchronous behaviour. Otherwise it will
         /// execute synchronously, returning an already-completed task.</remarks>
-        public override Task<int?> ReadAsInt32Async(CancellationToken cancellationToken = default(CancellationToken))
+        public override Task<int?> ReadAsInt32Async(CancellationToken cancellationToken = default)
         {
             return _safeAsync ? DoReadAsInt32Async(cancellationToken) : base.ReadAsInt32Async(cancellationToken);
         }
@@ -1746,7 +1753,7 @@ namespace Newtonsoft.Json
         /// property returns the <see cref="string"/>. This result will be <c>null</c> at the end of an array.</returns>
         /// <remarks>Derived classes must override this method to get asynchronous behaviour. Otherwise it will
         /// execute synchronously, returning an already-completed task.</remarks>
-        public override Task<string> ReadAsStringAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public override Task<string> ReadAsStringAsync(CancellationToken cancellationToken = default)
         {
             return _safeAsync ? DoReadAsStringAsync(cancellationToken) : base.ReadAsStringAsync(cancellationToken);
         }

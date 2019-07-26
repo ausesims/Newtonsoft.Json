@@ -69,9 +69,7 @@ namespace Newtonsoft.Json.Linq
         /// <param name="component">The component with the property for which to retrieve the value.</param>
         public override object GetValue(object component)
         {
-            JToken token = CastInstance(component)[Name];
-
-            return token;
+            return (component as JObject)?[Name];
         }
 
         /// <summary>
@@ -89,9 +87,12 @@ namespace Newtonsoft.Json.Linq
         /// <param name="value">The new value.</param>
         public override void SetValue(object component, object value)
         {
-            JToken token = value as JToken ?? new JValue(value);
+            if (component is JObject o)
+            {
+                JToken token = value as JToken ?? new JValue(value);
 
-            CastInstance(component)[Name] = token;
+                o[Name] = token;
+            }
         }
 
         /// <summary>
@@ -115,10 +116,7 @@ namespace Newtonsoft.Json.Linq
         /// <see cref="PropertyDescriptor.SetValue(Object, Object)"/>
         /// methods are invoked, the object specified might be an instance of this type.
         /// </returns>
-        public override Type ComponentType
-        {
-            get { return typeof(JObject); }
-        }
+        public override Type ComponentType => typeof(JObject);
 
         /// <summary>
         /// When overridden in a derived class, gets a value indicating whether this property is read-only.
@@ -126,10 +124,7 @@ namespace Newtonsoft.Json.Linq
         /// <returns>
         /// <c>true</c> if the property is read-only; otherwise, <c>false</c>.
         /// </returns>
-        public override bool IsReadOnly
-        {
-            get { return false; }
-        }
+        public override bool IsReadOnly => false;
 
         /// <summary>
         /// When overridden in a derived class, gets the type of the property.
@@ -137,10 +132,7 @@ namespace Newtonsoft.Json.Linq
         /// <returns>
         /// A <see cref="Type"/> that represents the type of the property.
         /// </returns>
-        public override Type PropertyType
-        {
-            get { return typeof(object); }
-        }
+        public override Type PropertyType => typeof(object);
 
         /// <summary>
         /// Gets the hash code for the name of the member.

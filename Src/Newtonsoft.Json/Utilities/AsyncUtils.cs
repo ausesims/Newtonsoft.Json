@@ -61,7 +61,7 @@ namespace Newtonsoft.Json.Utilities
         public static Task<T> FromCanceled<T>(this CancellationToken cancellationToken)
         {
             Debug.Assert(cancellationToken.IsCancellationRequested);
-            return new Task<T>(() => default(T), cancellationToken);
+            return new Task<T>(() => default, cancellationToken);
         }
 
         // Task.Delay(0) is optimised as a cached task within the framework, and indeed
@@ -91,6 +91,16 @@ namespace Newtonsoft.Json.Utilities
         {
             Debug.Assert(reader != null);
             return cancellationToken.IsCancellationRequested ? FromCanceled<int>(cancellationToken) : reader.ReadAsync(buffer, index, count);
+        }
+
+        public static bool IsCompletedSucessfully(this Task task)
+        {
+            // IsCompletedSucessfully is the faster method, but only currently exposed on .NET Core 2.0
+#if NETCOREAPP2_0
+            return task.IsCompletedSucessfully;
+#else
+            return task.Status == TaskStatus.RanToCompletion;
+#endif
         }
     }
 }

@@ -23,7 +23,7 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-#if !(NET35 || NET20 || DNXCORE50)
+#if !(NET35 || NET20 || DNXCORE50) || NETSTANDARD1_3 || NETSTANDARD2_0
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -75,6 +75,7 @@ namespace Newtonsoft.Json.Tests.Documentation
     [TestFixture]
     public class LinqToJsonTests : TestFixtureBase
     {
+        [Test]
         public void LinqToJsonBasic()
         {
             #region LinqToJsonBasic
@@ -98,6 +99,7 @@ namespace Newtonsoft.Json.Tests.Documentation
             #endregion
         }
 
+        [Test]
         public void LinqToJsonCreateNormal()
         {
             #region LinqToJsonCreateNormal
@@ -165,7 +167,7 @@ namespace Newtonsoft.Json.Tests.Documentation
             //    "item": [
             //      {
             //        "title": "Json.NET 1.3 + New license + Now on CodePlex",
-            //        "description": "Annoucing the release of Json.NET 1.3, the MIT license and being available on CodePlex",
+            //        "description": "Announcing the release of Json.NET 1.3, the MIT license and being available on CodePlex",
             //        "link": "http://james.newtonking.com/projects/json-net.aspx",
             //        "category": [
             //          "Json.NET",
@@ -174,7 +176,7 @@ namespace Newtonsoft.Json.Tests.Documentation
             //      },
             //      {
             //        "title": "LINQ to JSON beta",
-            //        "description": "Annoucing LINQ to JSON",
+            //        "description": "Announcing LINQ to JSON",
             //        "link": "http://james.newtonking.com/projects/json-net.aspx",
             //        "category": [
             //          "Json.NET",
@@ -269,7 +271,7 @@ namespace Newtonsoft.Json.Tests.Documentation
                 'item': [
                   {
                     'title': 'Json.NET 1.3 + New license + Now on CodePlex',
-                    'description': 'Annoucing the release of Json.NET 1.3, the MIT license and the source on CodePlex',
+                    'description': 'Announcing the release of Json.NET 1.3, the MIT license and the source on CodePlex',
                     'link': 'http://james.newtonking.com/projects/json-net.aspx',
                     'categories': [
                       'Json.NET',
@@ -278,7 +280,7 @@ namespace Newtonsoft.Json.Tests.Documentation
                   },
                   {
                     'title': 'LINQ to JSON beta',
-                    'description': 'Annoucing LINQ to JSON',
+                    'description': 'Announcing LINQ to JSON',
                     'link': 'http://james.newtonking.com/projects/json-net.aspx',
                     'categories': [
                       'Json.NET',
@@ -317,7 +319,7 @@ namespace Newtonsoft.Json.Tests.Documentation
                 'item': [
                   {
                     'title': 'Json.NET 1.3 + New license + Now on CodePlex',
-                    'description': 'Annoucing the release of Json.NET 1.3, the MIT license and the source on CodePlex',
+                    'description': 'Announcing the release of Json.NET 1.3, the MIT license and the source on CodePlex',
                     'link': 'http://james.newtonking.com/projects/json-net.aspx',
                     'categories': [
                       'Json.NET',
@@ -326,7 +328,7 @@ namespace Newtonsoft.Json.Tests.Documentation
                   },
                   {
                     'title': 'LINQ to JSON beta',
-                    'description': 'Annoucing LINQ to JSON',
+                    'description': 'Announcing LINQ to JSON',
                     'link': 'http://james.newtonking.com/projects/json-net.aspx',
                     'categories': [
                       'Json.NET',

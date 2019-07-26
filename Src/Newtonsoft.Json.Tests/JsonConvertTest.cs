@@ -30,7 +30,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
 using Newtonsoft.Json.Schema;
-#if !(NET20 || NET35 || PORTABLE40 || PORTABLE) || NETSTANDARD1_3
+#if !(NET20 || NET35 || PORTABLE40 || PORTABLE) || NETSTANDARD1_3 || NETSTANDARD2_0
 using System.Numerics;
 #endif
 using System.Runtime.Serialization;
@@ -121,13 +121,17 @@ namespace Newtonsoft.Json.Tests
         [Test]
         public void PopulateObjectWithOnlyComment()
         {
-            ExceptionAssert.Throws<JsonSerializationException>(() =>
+            var ex = ExceptionAssert.Throws<JsonSerializationException>(() =>
             {
                 string json = @"// file header";
 
                 PopulateTestObject o = new PopulateTestObject();
                 JsonConvert.PopulateObject(json, o);
             }, "No JSON content found. Path '', line 1, position 14.");
+
+            Assert.AreEqual(1, ex.LineNumber);
+            Assert.AreEqual(14, ex.LinePosition);
+            Assert.AreEqual(string.Empty, ex.Path);
         }
 
         [Test]
@@ -174,11 +178,11 @@ namespace Newtonsoft.Json.Tests
                 reader.Read();
 
                 JsonTextReader jsonTextReader = (JsonTextReader)reader;
-                Assert.IsNotNull(jsonTextReader.NameTable);
+                Assert.IsNotNull(jsonTextReader.PropertyNameTable);
 
                 string s = serializer.Deserialize<string>(reader);
                 Assert.AreEqual("hi", s);
-                Assert.IsNotNull(jsonTextReader.NameTable);
+                Assert.IsNotNull(jsonTextReader.PropertyNameTable);
 
                 NameTableTestClass o = new NameTableTestClass
                 {
@@ -200,14 +204,38 @@ namespace Newtonsoft.Json.Tests
             StringReader sr = new StringReader("{'property':'hi'}");
             JsonTextReader jsonTextReader = new JsonTextReader(sr);
 
-            Assert.IsNull(jsonTextReader.NameTable);
+            Assert.IsNull(jsonTextReader.PropertyNameTable);
 
             JsonSerializer serializer = new JsonSerializer();
             serializer.Converters.Add(new NameTableTestClassConverter());
             NameTableTestClass o = serializer.Deserialize<NameTableTestClass>(jsonTextReader);
 
-            Assert.IsNull(jsonTextReader.NameTable);
+            Assert.IsNull(jsonTextReader.PropertyNameTable);
             Assert.AreEqual("hi", o.Value);
+        }
+
+        public class CustonNameTable : JsonNameTable
+        {
+            public override string Get(char[] key, int start, int length)
+            {
+                return "_" + new string(key, start, length);
+            }
+        }
+
+        [Test]
+        public void CustonNameTableTest()
+        {
+            StringReader sr = new StringReader("{'property':'hi'}");
+            JsonTextReader jsonTextReader = new JsonTextReader(sr);
+
+            Assert.IsNull(jsonTextReader.PropertyNameTable);
+            var nameTable = jsonTextReader.PropertyNameTable = new CustonNameTable();
+
+            JsonSerializer serializer = new JsonSerializer();
+            Dictionary<string, string> o = serializer.Deserialize<Dictionary<string, string>>(jsonTextReader);
+            Assert.AreEqual("hi", o["_property"]);
+
+            Assert.AreEqual(nameTable, jsonTextReader.PropertyNameTable);
         }
 
         [Test]
@@ -1111,7 +1139,7 @@ namespace Newtonsoft.Json.Tests
             writer.Flush();
         }
 
-#if !(NET20 || NET35 || PORTABLE40 || PORTABLE) || NETSTANDARD1_3
+#if !(NET20 || NET35 || PORTABLE40 || PORTABLE) || NETSTANDARD1_3 || NETSTANDARD2_0
         [Test]
         public void IntegerLengthOverflows()
         {
@@ -1137,7 +1165,8 @@ namespace Newtonsoft.Json.Tests
             Assert.AreEqual(typeof(DateTime), jsonReader.ValueType);
         }
 
-        //[Test]
+#if false
+        [Test]
         public void StackOverflowTest()
         {
             StringBuilder sb = new StringBuilder();
@@ -1159,6 +1188,7 @@ namespace Newtonsoft.Json.Tests
             JsonSerializer serializer = new JsonSerializer() { };
             serializer.Deserialize<Nest>(new JsonTextReader(new StringReader(json)));
         }
+#endif
 
         public class Nest
         {
@@ -1760,6 +1790,43 @@ namespace Newtonsoft.Json.Tests
             }
 
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        }
+
+        [Test]
+        public void ShouldNotRequireIgnoredPropertiesWithItemsRequired()
+        {
+            string json = @"{
+  ""exp"": 1483228800,
+  ""active"": true
+}";
+            ItemsRequiredObjectWithIgnoredProperty value = JsonConvert.DeserializeObject<ItemsRequiredObjectWithIgnoredProperty>(json);
+            Assert.IsNotNull(value);
+            Assert.AreEqual(value.Expiration, new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+            Assert.AreEqual(value.Active, true);
+        }
+
+        [JsonObject(ItemRequired = Required.Always)]
+        public sealed class ItemsRequiredObjectWithIgnoredProperty
+        {
+            private static readonly DateTime s_unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            [JsonProperty("exp")]
+            private int _expiration
+            {
+                get
+                {
+                    return (int)((Expiration - s_unixEpoch).TotalSeconds);
+                }
+                set
+                {
+                    Expiration = s_unixEpoch.AddSeconds(value);
+                }
+            }
+
+            public bool Active { get; set; }
+
+            [JsonIgnore]
+            public DateTime Expiration { get; set; }
         }
     }
 }

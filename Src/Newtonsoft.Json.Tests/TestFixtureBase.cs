@@ -210,7 +210,7 @@ namespace Newtonsoft.Json.Tests
         }
 #endif
 
-        protected string ResolvePath(string path)
+        public static string ResolvePath(string path)
         {
 #if !DNXCORE50
             return Path.Combine(TestContext.CurrentContext.TestDirectory, path);
@@ -291,6 +291,9 @@ namespace Newtonsoft.Json.Tests
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+#else
+            // suppress writing to console with dotnet test to keep build log size small
+            Console.SetOut(new StringWriter());
 #endif
 
             JsonConvert.DefaultSettings = null;

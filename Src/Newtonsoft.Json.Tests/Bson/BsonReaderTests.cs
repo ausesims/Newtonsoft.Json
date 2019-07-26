@@ -31,7 +31,7 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Tests.TestObjects;
-#if !(NET20 || NET35 || PORTABLE) || NETSTANDARD1_3
+#if !(NET20 || NET35 || PORTABLE) || NETSTANDARD1_3 || NETSTANDARD2_0
 using System.Numerics;
 #endif
 using System.Text;
@@ -76,6 +76,7 @@ namespace Newtonsoft.Json.Tests.Bson
             public MemoryStream Blob { get; set; }
         }
 
+        [Test]
         public void Bson_SupportMultipleContent()
         {
             MemoryStream myStream = new MemoryStream();
@@ -1396,6 +1397,7 @@ namespace Newtonsoft.Json.Tests.Bson
             Assert.AreEqual(JsonToken.EndObject, reader.TokenType);
         }
 
+        [Test]
         public void UriGuidTimeSpanTestClassEmptyTest()
         {
             UriGuidTimeSpanTestClass c1 = new UriGuidTimeSpanTestClass();
@@ -1417,6 +1419,7 @@ namespace Newtonsoft.Json.Tests.Bson
             Assert.AreEqual(c1.Uri, c2.Uri);
         }
 
+        [Test]
         public void UriGuidTimeSpanTestClassValuesTest()
         {
             UriGuidTimeSpanTestClass c1 = new UriGuidTimeSpanTestClass
@@ -1473,10 +1476,11 @@ namespace Newtonsoft.Json.Tests.Bson
                 CollectionAssert.AreEquivalent(new byte[] { 72, 63, 62, 71, 92, 55 }, newObject.Data);
             }
         }
-        
+
+        [Test]
         public void Utf8Text()
         {
-            string badText = System.IO.File.ReadAllText(@"PoisonText.txt");
+            string badText = System.IO.File.ReadAllText(TestFixtureBase.ResolvePath(@"PoisonText.txt"));
             var j = new JObject();
             j["test"] = badText;
 
@@ -1491,7 +1495,7 @@ namespace Newtonsoft.Json.Tests.Bson
             Assert.AreEqual(badText, (string)o["test"]);
         }
 
-#if !(NET20 || NET35 || PORTABLE || PORTABLE40) || NETSTANDARD1_3
+#if !(NET20 || NET35 || PORTABLE || PORTABLE40) || NETSTANDARD1_3 || NETSTANDARD2_0
         public class BigIntegerTestClass
         {
             public BigInteger Blah { get; set; }

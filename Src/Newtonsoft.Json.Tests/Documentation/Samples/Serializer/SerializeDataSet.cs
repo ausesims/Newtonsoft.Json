@@ -23,7 +23,7 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-#if !(DNXCORE50 || PORTABLE || PORTABLE40)
+#if !(DNXCORE50 || PORTABLE || PORTABLE40) || NETSTANDARD2_0
 
 using System;
 using System.Collections.Generic;
@@ -84,7 +84,7 @@ namespace Newtonsoft.Json.Tests.Documentation.Samples.Serializer
             // }
             #endregion
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Table1"": [
     {
       ""id"": 0,

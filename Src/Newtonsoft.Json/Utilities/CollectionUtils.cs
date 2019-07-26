@@ -251,6 +251,23 @@ namespace Newtonsoft.Json.Utilities
             return -1;
         }
 
+#if HAVE_FAST_REVERSE
+        // faster reverse in .NET Framework with value types - https://github.com/JamesNK/Newtonsoft.Json/issues/1430
+        public static void FastReverse<T>(this List<T> list)
+        {
+            int i = 0;
+            int j = list.Count - 1;
+            while (i < j)
+            {
+                T temp = list[i];
+                list[i] = list[j];
+                list[j] = temp;
+                i++;
+                j--;
+            }
+        }
+#endif
+
         private static IList<int> GetDimensions(IList values, int dimensionsCount)
         {
             IList<int> dimensions = new List<int>();
@@ -272,8 +289,7 @@ namespace Newtonsoft.Json.Utilities
                 }
 
                 object v = currentArray[0];
-                IList list = v as IList;
-                if (list != null)
+                if (v is IList list)
                 {
                     currentArray = list;
                 }
@@ -367,7 +383,9 @@ namespace Newtonsoft.Json.Utilities
             // Defensively guard against a version of Linq where Enumerable.Empty<T> doesn't
             // return an array, but throw in debug versions so a better strategy can be
             // used if that ever happens.
+#pragma warning disable CA1825 // Avoid zero-length array allocations.
             return array ?? new T[0];
+#pragma warning restore CA1825 // Avoid zero-length array allocations.
         }
     }
 }

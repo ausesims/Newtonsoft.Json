@@ -25,11 +25,9 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Specialized;
 using System.Runtime.Serialization;
-#if !(NET35 || NET20 || PORTABLE || PORTABLE40)
-using System.Collections.Concurrent;
-#endif
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -63,6 +61,82 @@ namespace Newtonsoft.Json.Tests.Serialization
     [TestFixture]
     public class JsonSerializerCollectionsTests : TestFixtureBase
     {
+#if !(NET35 || NET20 || PORTABLE || PORTABLE40) || NETSTANDARD2_0
+        [Test]
+        public void DeserializeConcurrentDictionaryWithNullValue()
+        {
+            const string key = "id";
+            
+            var jsonValue = $"{{\"{key}\":null}}";
+
+            var deserializedObject = JsonConvert.DeserializeObject<ConcurrentDictionary<string, string>>(jsonValue);
+
+            Assert.IsNull(deserializedObject[key]);
+        }
+#endif
+
+#if !(NET20 || NET35)
+        [Test]
+        public void SerializeConcurrentQueue()
+        {
+            ConcurrentQueue<int> queue1 = new ConcurrentQueue<int>();
+            queue1.Enqueue(1);
+
+            string output = JsonConvert.SerializeObject(queue1);
+            Assert.AreEqual(@"[1]", output);
+
+            ConcurrentQueue<int> queue2 = JsonConvert.DeserializeObject<ConcurrentQueue<int>>(output);
+            int i;
+            Assert.IsTrue(queue2.TryDequeue(out i));
+            Assert.AreEqual(1, i);
+        }
+
+        [Test]
+        public void SerializeConcurrentBag()
+        {
+            ConcurrentBag<int> bag1 = new ConcurrentBag<int>();
+            bag1.Add(1);
+
+            string output = JsonConvert.SerializeObject(bag1);
+            Assert.AreEqual(@"[1]", output);
+
+            ConcurrentBag<int> bag2 = JsonConvert.DeserializeObject<ConcurrentBag<int>>(output);
+            int i;
+            Assert.IsTrue(bag2.TryTake(out i));
+            Assert.AreEqual(1, i);
+        }
+
+        [Test]
+        public void SerializeConcurrentStack()
+        {
+            ConcurrentStack<int> stack1 = new ConcurrentStack<int>();
+            stack1.Push(1);
+
+            string output = JsonConvert.SerializeObject(stack1);
+            Assert.AreEqual(@"[1]", output);
+
+            ConcurrentStack<int> stack2 = JsonConvert.DeserializeObject<ConcurrentStack<int>>(output);
+            int i;
+            Assert.IsTrue(stack2.TryPop(out i));
+            Assert.AreEqual(1, i);
+        }
+
+        [Test]
+        public void SerializeConcurrentDictionary()
+        {
+            ConcurrentDictionary<int, int> dic1 = new ConcurrentDictionary<int, int>();
+            dic1[1] = int.MaxValue;
+
+            string output = JsonConvert.SerializeObject(dic1);
+            Assert.AreEqual(@"{""1"":2147483647}", output);
+
+            ConcurrentDictionary<int, int> dic2 = JsonConvert.DeserializeObject<ConcurrentDictionary<int, int>>(output);
+            int i;
+            Assert.IsTrue(dic2.TryGetValue(1, out i));
+            Assert.AreEqual(int.MaxValue, i);
+        }
+#endif
+
         [Test]
         public void DoubleKey_WholeValue()
         {
@@ -202,7 +276,7 @@ namespace Newtonsoft.Json.Tests.Serialization
                 "Constructor for 'Newtonsoft.Json.Tests.Serialization.JsonSerializerCollectionsTests+TestCollectionBadIEnumerableParameter' must have no parameters or a single parameter that implements 'System.Collections.Generic.IEnumerable`1[System.Int32]'.");
         }
 
-#if !(DNXCORE50 || PORTABLE)
+#if !(DNXCORE50 || PORTABLE) || NETSTANDARD2_0
         public class TestCollectionNonGeneric : ArrayList
         {
             [JsonConstructor]
@@ -219,9 +293,9 @@ namespace Newtonsoft.Json.Tests.Serialization
             TestCollectionNonGeneric l = JsonConvert.DeserializeObject<TestCollectionNonGeneric>(json);
 
             Assert.AreEqual(3, l.Count);
-            Assert.AreEqual(1, l[0]);
-            Assert.AreEqual(2, l[1]);
-            Assert.AreEqual(3, l[2]);
+            Assert.AreEqual(1L, l[0]);
+            Assert.AreEqual(2L, l[1]);
+            Assert.AreEqual(3L, l[2]);
         }
 #endif
 
@@ -315,7 +389,7 @@ namespace Newtonsoft.Json.Tests.Serialization
                 "Constructor for 'Newtonsoft.Json.Tests.Serialization.JsonSerializerCollectionsTests+TestDictionaryBadIEnumerableParameter' must have no parameters or a single parameter that implements 'System.Collections.Generic.IEnumerable`1[System.Collections.Generic.KeyValuePair`2[System.String,System.Int32]]'.");
         }
 
-#if !(DNXCORE50 || PORTABLE)
+#if !(DNXCORE50 || PORTABLE) || NETSTANDARD2_0
         public class TestDictionaryNonGeneric : Hashtable
         {
             [JsonConstructor]
@@ -332,13 +406,13 @@ namespace Newtonsoft.Json.Tests.Serialization
             TestDictionaryNonGeneric d = JsonConvert.DeserializeObject<TestDictionaryNonGeneric>(json);
 
             Assert.AreEqual(3, d.Count);
-            Assert.AreEqual(0, d["zero"]);
-            Assert.AreEqual(1, d["one"]);
-            Assert.AreEqual(2, d["two"]);
+            Assert.AreEqual(0L, d["zero"]);
+            Assert.AreEqual(1L, d["one"]);
+            Assert.AreEqual(2L, d["two"]);
         }
 #endif
 
-#if !(DNXCORE50)
+#if !(DNXCORE50) || NETSTANDARD2_0
         public class NameValueCollectionTestClass
         {
             public NameValueCollection Collection { get; set; }
@@ -353,7 +427,7 @@ namespace Newtonsoft.Json.Tests.Serialization
         }
 #endif
 
-#if !(NET35 || NET20 || PORTABLE || PORTABLE40)
+#if !(NET35 || NET20 || PORTABLE || PORTABLE40) || NETSTANDARD2_0
         public class SomeObject
         {
             public string Text1 { get; set; }
@@ -388,7 +462,7 @@ namespace Newtonsoft.Json.Tests.Serialization
 
             string json = JsonConvert.SerializeObject(d, Formatting.Indented);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""key"": [
     {
       ""Text1"": ""value1""
@@ -995,7 +1069,7 @@ namespace Newtonsoft.Json.Tests.Serialization
             Assert.AreEqual(3, v2["Third"]);
         }
 
-#if !(NET35 || NET20 || PORTABLE || PORTABLE40)
+#if !(NET35 || NET20 || PORTABLE || PORTABLE40) || NETSTANDARD2_0
         [Test]
         public void DeserializeConcurrentDictionary()
         {
@@ -1709,7 +1783,7 @@ namespace Newtonsoft.Json.Tests.Serialization
             Assert.AreEqual(1, (int)((JObject)o.Data[2])["one"]);
         }
 
-#if !(DNXCORE50)
+#if !(DNXCORE50) || NETSTANDARD2_0
         [Test]
         public void SerializeArrayAsArrayList()
         {
@@ -1755,6 +1829,41 @@ namespace Newtonsoft.Json.Tests.Serialization
             Assert.AreEqual(2, newName.pNumbers.Count);
             Assert.AreEqual("555-1212", newName.pNumbers[0].phoneNumber);
             Assert.AreEqual("444-1212", newName.pNumbers[1].phoneNumber);
+        }
+
+        [TestFixture]
+        public class MultipleDefinedPropertySerialization
+        {
+            [Test]
+            public void SerializePropertyDefinedInMultipleInterfaces()
+            {
+                const string propertyValue = "value";
+
+                var list = new List<ITestInterface> { new TestClass { Property = propertyValue } };
+
+                var json = JsonConvert.SerializeObject(list);
+
+                StringAssert.AreEqual($"[{{\"Property\":\"{propertyValue}\"}}]", json);
+            }
+
+            public interface IFirstInterface
+            {
+                string Property { get; set; }
+            }
+
+            public interface ISecondInterface
+            {
+                string Property { get; set; }
+            }
+
+            public interface ITestInterface : IFirstInterface, ISecondInterface
+            {
+            }
+
+            public class TestClass : ITestInterface
+            {
+                public string Property { get; set; }
+            }
         }
 
         [Test]
@@ -1939,7 +2048,7 @@ namespace Newtonsoft.Json.Tests.Serialization
         }
 #endif
 
-#if !DNXCORE50
+#if !DNXCORE50 || NETSTANDARD2_0
         [Test]
         public void EmptyStringInHashtableIsDeserialized()
         {
@@ -1986,6 +2095,50 @@ namespace Newtonsoft.Json.Tests.Serialization
             Assert.AreEqual("apple", deserialized[0]);
             Assert.AreEqual("monkey", deserialized[1]);
             Assert.AreEqual("goose", deserialized[2]);
+        }
+
+#if !(PORTABLE || PORTABLE40)
+        [Test]
+        public void DeserializeCultureInfoKey()
+        {
+            string json = @"{ ""en-US"": ""Hi"", ""sv-SE"": ""Hej"" }";
+
+            Dictionary<CultureInfo, string> values = JsonConvert.DeserializeObject<Dictionary<CultureInfo, string>>(json);
+            Assert.AreEqual(2, values.Count);
+        }
+#endif
+
+        [Test]
+        public void DeserializeConstructorWithReadonlyArrayProperty()
+        {
+            string json = @"{""Endpoint"":""http://localhost"",""Name"":""account1"",""Dimensions"":[{""Key"":""Endpoint"",""Value"":""http://localhost""},{""Key"":""Name"",""Value"":""account1""}]}";
+
+            AccountInfo values = JsonConvert.DeserializeObject<AccountInfo>(json);
+            Assert.AreEqual("http://localhost", values.Endpoint);
+            Assert.AreEqual("account1", values.Name);
+            Assert.AreEqual(2, values.Dimensions.Length);
+        }
+
+        public sealed class AccountInfo
+        {
+            private KeyValuePair<string, string>[] metricDimensions;
+
+            public AccountInfo(string endpoint, string name)
+            {
+                this.Endpoint = endpoint;
+                this.Name = name;
+            }
+
+            public string Endpoint { get; }
+
+            public string Name { get; }
+
+            public KeyValuePair<string, string>[] Dimensions =>
+                this.metricDimensions ?? (this.metricDimensions = new KeyValuePair<string, string>[]
+                {
+                    new KeyValuePair<string, string>("Endpoint", this.Endpoint.ToString()),
+                    new KeyValuePair<string, string>("Name", this.Name)
+                });
         }
 
         public class MyClass : IList<string>

@@ -37,25 +37,17 @@ namespace Newtonsoft.Json.Utilities
     {
         private static readonly LateBoundReflectionDelegateFactory _instance = new LateBoundReflectionDelegateFactory();
 
-        internal static ReflectionDelegateFactory Instance
-        {
-            get { return _instance; }
-        }
+        internal static ReflectionDelegateFactory Instance => _instance;
 
         public override ObjectConstructor<object> CreateParameterizedConstructor(MethodBase method)
         {
             ValidationUtils.ArgumentNotNull(method, nameof(method));
 
-            ConstructorInfo c = method as ConstructorInfo;
-            if (c != null)
+            if (method is ConstructorInfo c)
             {
                 // don't convert to method group to avoid medium trust issues
                 // https://github.com/JamesNK/Newtonsoft.Json/issues/476
-                return a =>
-                {
-                    object[] args = a;
-                    return c.Invoke(args);
-                };
+                return a => c.Invoke(a);
             }
 
             return a => method.Invoke(null, a);
@@ -65,8 +57,7 @@ namespace Newtonsoft.Json.Utilities
         {
             ValidationUtils.ArgumentNotNull(method, nameof(method));
 
-            ConstructorInfo c = method as ConstructorInfo;
-            if (c != null)
+            if (method is ConstructorInfo c)
             {
                 return (o, a) => c.Invoke(a);
             }

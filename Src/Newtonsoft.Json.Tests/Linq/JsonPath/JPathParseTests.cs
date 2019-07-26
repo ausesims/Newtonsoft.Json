@@ -203,6 +203,29 @@ namespace Newtonsoft.Json.Tests.Linq.JsonPath
         }
 
         [Test]
+        public void QueryTrue()
+        {
+            JPath path = new JPath("$.elements[?(true)]");
+            Assert.AreEqual(2, path.Filters.Count);
+            Assert.AreEqual("elements", ((FieldFilter)path.Filters[0]).Name);
+            Assert.AreEqual(QueryOperator.Exists, ((QueryFilter)path.Filters[1]).Expression.Operator);
+        }
+
+        [Test]
+        public void ScanQuery()
+        {
+            JPath path = new JPath("$.elements..[?(@.id=='AAA')]");
+            Assert.AreEqual(2, path.Filters.Count);
+            Assert.AreEqual("elements", ((FieldFilter)path.Filters[0]).Name);
+
+            BooleanQueryExpression expression = (BooleanQueryExpression)((QueryScanFilter) path.Filters[1]).Expression;
+
+            List<PathFilter> paths = (List<PathFilter>)expression.Left;
+
+            Assert.IsInstanceOf(typeof(FieldFilter), paths[0]);
+        }
+
+        [Test]
         public void WildcardScanWithRoot()
         {
             JPath path = new JPath("$..*");
@@ -289,6 +312,45 @@ namespace Newtonsoft.Json.Tests.Linq.JsonPath
             BooleanQueryExpression expressions = (BooleanQueryExpression)((QueryFilter)path.Filters[1]).Expression;
             Assert.AreEqual(QueryOperator.Equals, expressions.Operator);
             Assert.AreEqual("h\\i", (string)(JToken)expressions.Right);
+        }
+
+        [Test]
+        public void SinglePropertyAndFilterWithRegexAndOptions()
+        {
+            JPath path = new JPath("Blah[ ?( @.name=~/hi/i ) ]");
+            Assert.AreEqual(2, path.Filters.Count);
+            Assert.AreEqual("Blah", ((FieldFilter)path.Filters[0]).Name);
+            BooleanQueryExpression expressions = (BooleanQueryExpression)((QueryFilter)path.Filters[1]).Expression;
+            Assert.AreEqual(QueryOperator.RegexEquals, expressions.Operator);
+            Assert.AreEqual("/hi/i", (string)(JToken)expressions.Right);
+        }
+
+        [Test]
+        public void SinglePropertyAndFilterWithRegex()
+        {
+            JPath path = new JPath("Blah[?(@.title =~ /^.*Sword.*$/)]");
+            Assert.AreEqual(2, path.Filters.Count);
+            Assert.AreEqual("Blah", ((FieldFilter)path.Filters[0]).Name);
+            BooleanQueryExpression expressions = (BooleanQueryExpression)((QueryFilter)path.Filters[1]).Expression;
+            Assert.AreEqual(QueryOperator.RegexEquals, expressions.Operator);
+            Assert.AreEqual("/^.*Sword.*$/", (string)(JToken)expressions.Right);
+        }
+
+        [Test]
+        public void SinglePropertyAndFilterWithEscapedRegex()
+        {
+            JPath path = new JPath(@"Blah[?(@.title =~ /[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g)]");
+            Assert.AreEqual(2, path.Filters.Count);
+            Assert.AreEqual("Blah", ((FieldFilter)path.Filters[0]).Name);
+            BooleanQueryExpression expressions = (BooleanQueryExpression)((QueryFilter)path.Filters[1]).Expression;
+            Assert.AreEqual(QueryOperator.RegexEquals, expressions.Operator);
+            Assert.AreEqual(@"/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g", (string)(JToken)expressions.Right);
+        }
+
+        [Test]
+        public void SinglePropertyAndFilterWithOpenRegex()
+        {
+            ExceptionAssert.Throws<JsonException>(() => { new JPath(@"Blah[?(@.title =~ /[\"); }, "Path ended with an open regex.");
         }
 
         [Test]

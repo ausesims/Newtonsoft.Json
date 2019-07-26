@@ -23,7 +23,7 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-#if !(PORTABLE || DNXCORE50 || PORTABLE40)
+#if !(PORTABLE || DNXCORE50 || PORTABLE40) || NETSTANDARD2_0
 using System;
 using Newtonsoft.Json.Converters;
 #if DNXCORE50
@@ -36,6 +36,7 @@ using NUnit.Framework;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Tests.TestObjects;
 using System.Data;
+using System.IO;
 
 namespace Newtonsoft.Json.Tests.Converters
 {
@@ -44,7 +45,11 @@ namespace Newtonsoft.Json.Tests.Converters
         [Test]
         public void DeserializeInvalidDataTable()
         {
-            ExceptionAssert.Throws<JsonException>(() => JsonConvert.DeserializeObject<DataSet>("{\"pending_count\":23,\"completed_count\":45}"), "Unexpected JSON token when reading DataTable. Expected StartArray, got Integer. Path 'pending_count', line 1, position 19.");
+            var ex = ExceptionAssert.Throws<JsonSerializationException>(() => JsonConvert.DeserializeObject<DataSet>("{\"pending_count\":23,\"completed_count\":45}"), "Unexpected JSON token when reading DataTable. Expected StartArray, got Integer. Path 'pending_count', line 1, position 19.");
+
+            Assert.AreEqual(1, ex.LineNumber);
+            Assert.AreEqual(19, ex.LinePosition);
+            Assert.AreEqual("pending_count", ex.Path);
         }
 
         [Test]
@@ -105,6 +110,18 @@ namespace Newtonsoft.Json.Tests.Converters
         public class DataSetTestClass
         {
             public DataSet Set { get; set; }
+        }
+
+        [Test]
+        public void WriteJsonNull()
+        {
+            StringWriter sw = new StringWriter();
+            JsonTextWriter jsonWriter = new JsonTextWriter(sw);
+
+            DataSetConverter converter = new DataSetConverter();
+            converter.WriteJson(jsonWriter, null, null);
+
+            StringAssert.AreEqual(@"null", sw.ToString());
         }
 
         [Test]

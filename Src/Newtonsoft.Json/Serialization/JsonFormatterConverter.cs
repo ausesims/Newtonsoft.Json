@@ -60,8 +60,7 @@ namespace Newtonsoft.Json.Serialization
         {
             ValidationUtils.ArgumentNotNull(value, nameof(value));
 
-            JToken token = value as JToken;
-            if (token == null)
+            if (!(value is JToken token))
             {
                 throw new ArgumentException("Value is not a JToken.", nameof(value));
             }
@@ -73,9 +72,9 @@ namespace Newtonsoft.Json.Serialization
         {
             ValidationUtils.ArgumentNotNull(value, nameof(value));
 
-            if (value is JValue)
+            if (value is JValue v)
             {
-                value = ((JValue)value).Value;
+                value = v.Value;
             }
 
             return System.Convert.ChangeType(value, typeCode, CultureInfo.InvariantCulture);

@@ -312,7 +312,7 @@ namespace Newtonsoft.Json.Tests.Schema
             Assert.IsTrue(v.IsValid(schema));
         }
 
-#if !(PORTABLE || DNXCORE50 || PORTABLE40) || NETSTANDARD1_3
+#if !(PORTABLE || DNXCORE50 || PORTABLE40) || NETSTANDARD1_3 || NETSTANDARD2_0
         [Test]
         public void GenerateSchemaForISerializable()
         {
@@ -340,7 +340,7 @@ namespace Newtonsoft.Json.Tests.Schema
         }
 #endif
 
-#if !(PORTABLE || DNXCORE50 || PORTABLE40) || NETSTANDARD1_3
+#if !(PORTABLE || DNXCORE50 || PORTABLE40) || NETSTANDARD1_3 || NETSTANDARD2_0
         public class CustomDirectoryInfoMapper : DefaultContractResolver
         {
             public CustomDirectoryInfoMapper()
@@ -367,109 +367,6 @@ namespace Newtonsoft.Json.Tests.Schema
                 return c;
             }
         }
-
-        [Test]
-        public void GenerateSchemaForDirectoryInfo()
-        {
-            JsonSchemaGenerator generator = new JsonSchemaGenerator();
-            generator.UndefinedSchemaIdHandling = UndefinedSchemaIdHandling.UseTypeName;
-            generator.ContractResolver = new CustomDirectoryInfoMapper
-            {
-#if !(PORTABLE || DNXCORE50)
-                IgnoreSerializableAttribute = true
-#endif
-            };
-
-            JsonSchema schema = generator.Generate(typeof(DirectoryInfo), true);
-
-            string json = schema.ToString();
-
-            StringAssert.AreEqual(@"{
-  ""id"": ""System.IO.DirectoryInfo"",
-  ""required"": true,
-  ""type"": [
-    ""object"",
-    ""null""
-  ],
-  ""additionalProperties"": false,
-  ""properties"": {
-    ""Name"": {
-      ""required"": true,
-      ""type"": [
-        ""string"",
-        ""null""
-      ]
-    },
-    ""Parent"": {
-      ""$ref"": ""System.IO.DirectoryInfo""
-    },
-    ""Exists"": {
-      ""required"": true,
-      ""type"": ""boolean""
-    },
-    ""FullName"": {
-      ""required"": true,
-      ""type"": [
-        ""string"",
-        ""null""
-      ]
-    },
-    ""Extension"": {
-      ""required"": true,
-      ""type"": [
-        ""string"",
-        ""null""
-      ]
-    },
-    ""CreationTime"": {
-      ""required"": true,
-      ""type"": ""string""
-    },
-    ""CreationTimeUtc"": {
-      ""required"": true,
-      ""type"": ""string""
-    },
-    ""LastAccessTime"": {
-      ""required"": true,
-      ""type"": ""string""
-    },
-    ""LastAccessTimeUtc"": {
-      ""required"": true,
-      ""type"": ""string""
-    },
-    ""LastWriteTime"": {
-      ""required"": true,
-      ""type"": ""string""
-    },
-    ""LastWriteTimeUtc"": {
-      ""required"": true,
-      ""type"": ""string""
-    },
-    ""Attributes"": {
-      ""required"": true,
-      ""type"": ""integer""
-    }
-  }
-}", json);
-
-            DirectoryInfo temp = new DirectoryInfo(@"c:\temp");
-
-            JTokenWriter jsonWriter = new JTokenWriter();
-            JsonSerializer serializer = new JsonSerializer();
-            serializer.Converters.Add(new IsoDateTimeConverter());
-            serializer.ContractResolver = new CustomDirectoryInfoMapper
-            {
-#if !(PORTABLE || DNXCORE50)
-                IgnoreSerializableInterface = true
-#endif
-            };
-            serializer.Serialize(jsonWriter, temp);
-
-            List<string> errors = new List<string>();
-            jsonWriter.Token.Validate(schema, (sender, args) => errors.Add(args.Message));
-
-            Assert.AreEqual(0, errors.Count);
-        }
 #endif
 
         [Test]
@@ -479,7 +376,7 @@ namespace Newtonsoft.Json.Tests.Schema
             generator.UndefinedSchemaIdHandling = UndefinedSchemaIdHandling.UseTypeName;
             generator.ContractResolver = new CamelCasePropertyNamesContractResolver()
             {
-#if !(PORTABLE || DNXCORE50 || PORTABLE40) || NETSTANDARD1_3
+#if !(PORTABLE || DNXCORE50 || PORTABLE40) || NETSTANDARD1_3 || NETSTANDARD2_0
                 IgnoreSerializableAttribute = true
 #endif
             };
@@ -524,7 +421,7 @@ namespace Newtonsoft.Json.Tests.Schema
 }", json);
         }
 
-#if !(PORTABLE || DNXCORE50 || PORTABLE40) || NETSTANDARD1_3
+#if !(PORTABLE || DNXCORE50 || PORTABLE40) || NETSTANDARD1_3 || NETSTANDARD2_0
         [Test]
         public void GenerateSchemaSerializable()
         {
@@ -837,7 +734,7 @@ namespace Newtonsoft.Json.Tests.Schema
     {
     }
 
-#if !(PORTABLE || DNXCORE50 || PORTABLE40) || NETSTANDARD1_3
+#if !(PORTABLE || DNXCORE50 || PORTABLE40) || NETSTANDARD1_3 || NETSTANDARD2_0
     [Serializable]
     public sealed class SerializableTestObject
     {

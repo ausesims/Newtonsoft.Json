@@ -39,10 +39,7 @@ namespace Newtonsoft.Json.Utilities
     {
         private static readonly ExpressionReflectionDelegateFactory _instance = new ExpressionReflectionDelegateFactory();
 
-        internal static ReflectionDelegateFactory Instance
-        {
-            get { return _instance; }
-        }
+        internal static ReflectionDelegateFactory Instance => _instance;
 
         public override ObjectConstructor<object> CreateParameterizedConstructor(MethodBase method)
         {
@@ -145,8 +142,7 @@ namespace Newtonsoft.Json.Utilities
                 callExpression = Expression.Call(readParameter, (MethodInfo)method, argsExpression);
             }
 
-            MethodInfo m = method as MethodInfo;
-            if (m != null)
+            if (method is MethodInfo m)
             {
                 if (m.ReturnType != typeof(void))
                 {

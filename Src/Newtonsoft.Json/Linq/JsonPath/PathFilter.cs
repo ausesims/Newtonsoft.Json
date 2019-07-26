@@ -10,10 +10,8 @@ namespace Newtonsoft.Json.Linq.JsonPath
 
         protected static JToken GetTokenIndex(JToken t, bool errorWhenNoMatch, int index)
         {
-            JArray a = t as JArray;
-            JConstructor c = t as JConstructor;
 
-            if (a != null)
+            if (t is JArray a)
             {
                 if (a.Count <= index)
                 {
@@ -27,7 +25,7 @@ namespace Newtonsoft.Json.Linq.JsonPath
 
                 return a[index];
             }
-            else if (c != null)
+            else if (t is JConstructor c)
             {
                 if (c.Count <= index)
                 {
@@ -50,6 +48,34 @@ namespace Newtonsoft.Json.Linq.JsonPath
 
                 return null;
             }
+        }
+
+        protected static JToken GetNextScanValue(JToken originalParent, JToken container, JToken value)
+        {
+            // step into container's values
+            if (container != null && container.HasValues)
+            {
+                value = container.First;
+            }
+            else
+            {
+                // finished container, move to parent
+                while (value != null && value != originalParent && value == value.Parent.Last)
+                {
+                    value = value.Parent;
+                }
+
+                // finished
+                if (value == null || value == originalParent)
+                {
+                    return null;
+                }
+
+                // move to next value in container
+                value = value.Next;
+            }
+
+            return value;
         }
     }
 }

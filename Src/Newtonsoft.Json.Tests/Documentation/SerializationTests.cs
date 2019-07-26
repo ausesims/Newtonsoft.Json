@@ -23,7 +23,7 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-#if !(NET35 || NET20 || PORTABLE || DNXCORE50)
+#if !(NET35 || NET20 || PORTABLE || DNXCORE50) || NETSTANDARD2_0
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -46,12 +46,21 @@ using Newtonsoft.Json.Tests.TestObjects;
 using Newtonsoft.Json.Utilities;
 using System.Globalization;
 using ErrorEventArgs = Newtonsoft.Json.Serialization.ErrorEventArgs;
+using OriginalStreamWriter = System.IO.StreamWriter;
+using StreamWriter = Newtonsoft.Json.Tests.Documentation.SerializationTests.StreamWriter;
 
 namespace Newtonsoft.Json.Tests.Documentation
 {
     [TestFixture]
     public class SerializationTests : TestFixtureBase
     {
+        public class StreamWriter : OriginalStreamWriter
+        {
+            public StreamWriter(string path) : base(TestFixtureBase.ResolvePath(Path.GetFileName(path)))
+            {
+            }
+        }
+
         [Test]
         public void SerializeObject()
         {
@@ -81,6 +90,7 @@ namespace Newtonsoft.Json.Tests.Documentation
             Assert.AreEqual("Apple", deserializedProduct.Name);
         }
 
+        [Test]
         public void JsonSerializerToStream()
         {
             #region JsonSerializerToStream
@@ -114,7 +124,6 @@ namespace Newtonsoft.Json.Tests.Documentation
 
             // new Date(976918263055)
             [JsonProperty]
-            [JsonConverter(typeof(JavaScriptDateTimeConverter))]
             public DateTime LastModified { get; set; }
 
             // not serialized because mode is opt-in
@@ -338,6 +347,7 @@ namespace Newtonsoft.Json.Tests.Documentation
 }", json);
         }
 
+        [Test]
         public void PreservingObjectReferencesOff()
         {
             #region PreservingObjectReferencesOff
@@ -555,7 +565,7 @@ namespace Newtonsoft.Json.Tests.Documentation
             //}
             #endregion
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""name"": ""Widget"",
   ""expiryDate"": ""2010-12-20T18:01:00Z"",
   ""price"": 9.99,
@@ -605,7 +615,7 @@ namespace Newtonsoft.Json.Tests.Documentation
             //]
             #endregion
 
-            Assert.AreEqual(@"[
+            StringAssert.AreEqual(@"[
   {
     ""Name"": ""Product 1"",
     ""ExpiryDate"": ""2000-12-29T00:00:00Z"",
@@ -679,6 +689,7 @@ namespace Newtonsoft.Json.Tests.Documentation
             public DateTime LogDate { get; set; }
         }
 
+        [Test]
         public void WriteJsonDates()
         {
             LogEntry entry = new LogEntry
@@ -779,7 +790,7 @@ namespace Newtonsoft.Json.Tests.Documentation
             // }
             #endregion
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Name"": ""Bad Boys III"",
   ""Description"": ""It's no Bad Boys"",
   ""Classification"": null,
@@ -788,7 +799,7 @@ namespace Newtonsoft.Json.Tests.Documentation
   ""ReleaseCountries"": null
 }", included);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Name"": ""Bad Boys III"",
   ""Description"": ""It's no Bad Boys""
 }", ignored);
@@ -814,6 +825,7 @@ namespace Newtonsoft.Json.Tests.Documentation
         }
         #endregion
 
+        [Test]
         public void ReducingSerializedJsonSizeDefaultValueHandlingExample()
         {
             #region ReducingSerializedJsonSizeDefaultValueHandlingExample
@@ -850,7 +862,7 @@ namespace Newtonsoft.Json.Tests.Documentation
             // }
             #endregion
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Company"": ""Acme Ltd."",
   ""Amount"": 50.0,
   ""Paid"": false,
@@ -859,10 +871,10 @@ namespace Newtonsoft.Json.Tests.Documentation
   ""FollowUpEmailAddress"": """"
 }", included);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""Company"": ""Acme Ltd."",
   ""Amount"": 50.0
-}", included);
+}", ignored);
         }
 
         #region ReducingSerializedJsonSizeContractResolverObject
@@ -897,6 +909,7 @@ namespace Newtonsoft.Json.Tests.Documentation
         }
         #endregion
 
+        [Test]
         public void ReducingSerializedJsonSizeContractResolverExample()
         {
             #region ReducingSerializedJsonSizeContractResolverExample
@@ -927,13 +940,13 @@ namespace Newtonsoft.Json.Tests.Documentation
             // }
             #endregion
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""AuthorName"": ""Brandon Sanderson"",
   ""AuthorAge"": 34,
   ""AuthorCountry"": ""United States of America""
 }", startingWithA);
 
-            Assert.AreEqual(@"{
+            StringAssert.AreEqual(@"{
   ""BookName"": ""The Gathering Storm"",
   ""BookPrice"": 16.19
 }", startingWithB);

@@ -16,35 +16,22 @@ namespace Newtonsoft.Json.Linq.JsonPath
                 }
 
                 JToken value = c;
-                JToken container = c;
 
                 while (true)
                 {
-                    if (container != null && container.HasValues)
-                    {
-                        value = container.First;
-                    }
-                    else
-                    {
-                        while (value != null && value != c && value == value.Parent.Last)
-                        {
-                            value = value.Parent;
-                        }
+                    JContainer container = value as JContainer;
 
-                        if (value == null || value == c)
-                        {
-                            break;
-                        }
-
-                        value = value.Next;
+                    value = GetNextScanValue(c, container, value);
+                    if (value == null)
+                    {
+                        break;
                     }
 
-                    JProperty e = value as JProperty;
-                    if (e != null)
+                    if (value is JProperty property)
                     {
-                        if (e.Name == Name)
+                        if (property.Name == Name)
                         {
-                            yield return e.Value;
+                            yield return property.Value;
                         }
                     }
                     else
@@ -54,8 +41,6 @@ namespace Newtonsoft.Json.Linq.JsonPath
                             yield return value;
                         }
                     }
-
-                    container = value as JContainer;
                 }
             }
         }

@@ -25,6 +25,7 @@
 
 #if HAVE_ASYNC
 
+using System;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,16 +42,36 @@ namespace Newtonsoft.Json.Linq
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <param name="converters">A collection of <see cref="JsonConverter"/> which will be used when writing the token.</param>
         /// <returns>A <see cref="Task"/> that represents the asynchronous write operation.</returns>
-        public override async Task WriteToAsync(JsonWriter writer, CancellationToken cancellationToken, params JsonConverter[] converters)
+        public override Task WriteToAsync(JsonWriter writer, CancellationToken cancellationToken, params JsonConverter[] converters)
         {
-            await writer.WriteStartObjectAsync(cancellationToken).ConfigureAwait(false);
+            Task t = writer.WriteStartObjectAsync(cancellationToken);
+            if (!t.IsCompletedSucessfully())
+            {
+                return AwaitProperties(t, 0, writer, cancellationToken, converters);
+            }
 
             for (int i = 0; i < _properties.Count; i++)
             {
-                await _properties[i].WriteToAsync(writer, cancellationToken, converters).ConfigureAwait(false);
+                t = _properties[i].WriteToAsync(writer, cancellationToken, converters);
+                if (!t.IsCompletedSucessfully())
+                {
+                    return AwaitProperties(t, i + 1, writer, cancellationToken, converters);
+                }
             }
 
-            await writer.WriteEndObjectAsync(cancellationToken).ConfigureAwait(false);
+            return writer.WriteEndObjectAsync(cancellationToken);
+
+            // Local functions, params renamed (capitalized) so as not to capture and allocate when calling async
+            async Task AwaitProperties(Task task, int i, JsonWriter Writer, CancellationToken CancellationToken, JsonConverter[] Converters)
+            {
+                await task.ConfigureAwait(false);
+                for (; i < _properties.Count; i++)
+                {
+                    await _properties[i].WriteToAsync(Writer, CancellationToken, Converters).ConfigureAwait(false);
+                }
+
+                await Writer.WriteEndObjectAsync(CancellationToken).ConfigureAwait(false);
+            }
         }
 
         /// <summary>
@@ -61,7 +82,7 @@ namespace Newtonsoft.Json.Linq
         /// <returns>
         /// A <see cref="Task{TResult}"/> that represents the asynchronous load. The <see cref="Task{TResult}.Result"/>
         /// property returns a <see cref="JObject"/> that contains the JSON that was read from the specified <see cref="JsonReader"/>.</returns>
-        public new static Task<JObject> LoadAsync(JsonReader reader, CancellationToken cancellationToken = default(CancellationToken))
+        public new static Task<JObject> LoadAsync(JsonReader reader, CancellationToken cancellationToken = default)
         {
             return LoadAsync(reader, null, cancellationToken);
         }
@@ -76,7 +97,7 @@ namespace Newtonsoft.Json.Linq
         /// <returns>
         /// A <see cref="Task{TResult}"/> that represents the asynchronous load. The <see cref="Task{TResult}.Result"/>
         /// property returns a <see cref="JObject"/> that contains the JSON that was read from the specified <see cref="JsonReader"/>.</returns>
-        public new static async Task<JObject> LoadAsync(JsonReader reader, JsonLoadSettings settings, CancellationToken cancellationToken = default(CancellationToken))
+        public new static async Task<JObject> LoadAsync(JsonReader reader, JsonLoadSettings settings, CancellationToken cancellationToken = default)
         {
             ValidationUtils.ArgumentNotNull(reader, nameof(reader));
 
